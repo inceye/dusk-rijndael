@@ -183,12 +183,140 @@ const RCON: [u8; 256] = [
     198, 151, 53, 106, 212, 179, 125, 250, 239, 197, 145, 57, 114, 228, 211, 189,
     97, 194, 159, 37, 74, 148, 51, 102, 204, 131, 29, 58, 116, 232, 203, 141];
 
+///////////////////////////////////////////////////////////////////////////////
+//                    Substitution and reverse substitution                  //
+///////////////////////////////////////////////////////////////////////////////
 
+fn substitute (array_in: &mut [u8]) {
+    for element_number in 0..array_in.len() {
+        array_in[element_number] = SBOX[array_in[element_number] as usize];
+    }
+}
 
+fn inverse_substitute (array_in: &mut [u8]) {
+    for element_number in 0..array_in.len() {
+        array_in[element_number] = BSBOX[array_in[element_number] as usize];
+    }
+}
 
+///////////////////////////////////////////////////////////////////////////////
+//                      Columns mixing and reverse mixing                    //
+///////////////////////////////////////////////////////////////////////////////
 
+fn mix_column (array_in: &mut [u8; 4], column: usize) {
+    let mut tmp: [u8; 4] = [0, 0, 0, 0];
+    tmp[0] = GM2[array_in[column] as usize] ^ GM3[array_in[column + 4] as usize] ^
+        array_in[column + 8] ^ array_in[column + 12];
 
+    tmp[1] = array_in[column] ^ GM2[array_in[column + 4] as usize] ^
+        GM3[array_in[column + 8] as usize] ^ array_in[column + 12];
 
+    tmp[2] = array_in[column] ^ array_in[column + 4] ^
+        GM2[array_in[column + 8] as usize] ^ GM3[array_in[column + 12] as usize];
+
+    tmp[3] = GM3[array_in[column] as usize] ^ array_in[column + 4] ^
+        array_in[column + 8] ^ GM2[array_in[column + 12] as usize];
+
+    array_in[column] = tmp[0];
+    array_in[column + 4] = tmp[1];
+    array_in[column + 8] = tmp[2];
+    array_in[column + 12] = tmp[3];
+}
+
+fn inverse_mix_column (array_in: &mut [u8; 4], column: usize) {
+    let mut tmp: [u8; 4] = [0, 0, 0, 0];
+
+    tmp[0] = GM14[array_in[column] as usize] ^ GM11[array_in[column + 4] as usize]
+        ^ GM13[array_in[column + 8] as usize] ^ GM9[array_in[column + 12] as usize];
+
+    tmp[1] = GM9[array_in[column] as usize] ^ GM14[array_in[column + 4] as usize]
+        ^ GM11[array_in[column + 8] as usize] ^ GM13[array_in[column + 12] as usize];
+
+    tmp[2] = GM13[array_in[column] as usize] ^ GM9[array_in[column + 4] as usize]
+        ^ GM14[array_in[column + 8] as usize] ^ GM11[array_in[column + 12] as usize];
+
+    tmp[3] = GM11[array_in[column] as usize] ^ GM13[array_in[column + 4] as usize]
+        ^ GM9[array_in[column + 8] as usize] ^ GM14[array_in[column + 12] as usize];
+
+    array_in[column] = tmp[0];
+    array_in[column + 4] = tmp[1];
+    array_in[column + 8] = tmp[2];
+    array_in[column + 12] = tmp[3];
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                     Rows shifting and reverse shifting                    //
+///////////////////////////////////////////////////////////////////////////////
+
+fn shift_rows (array_in: &mut [u8; 16]) {
+    let mut tmp: u8 = 0;
+
+    tmp = array_in[4];
+    array_in[4] = array_in[5];
+    array_in[5] = array_in[6];
+    array_in[6] = array_in[7];
+    array_in[7] = tmp;
+
+    tmp = array_in[8];
+    array_in[8] = array_in[10];
+    array_in[10] = tmp;
+    tmp = array_in[9];
+    array_in[9] = array_in[11];
+    array_in[11] = tmp;
+
+    tmp = array_in[12];
+    array_in[12] = array_in[15];
+    array_in[15] = array_in[14];
+    array_in[14] = array_in[13];
+    array_in[13] = tmp;
+}
+
+fn inverse_shift_rows (array_in: &mut [u8; 16]) {
+    let mut tmp: u8 = 0;
+
+    tmp = array_in[4];
+    array_in[4] = array_in[7];
+    array_in[7] = array_in[6];
+    array_in[6] = array_in[5];
+    array_in[5] = tmp;
+
+    tmp = array_in[8];
+    array_in[8] = array_in[10];
+    array_in[10] = tmp;
+    tmp = array_in[9];
+    array_in[9] = array_in[11];
+    array_in[11] = tmp;
+
+    tmp = array_in[12];
+    array_in[12] = array_in[13];
+    array_in[13] = array_in[14];
+    array_in[14] = array_in[15];
+    array_in[15] = tmp;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                                Key generation                             //
+///////////////////////////////////////////////////////////////////////////////
+
+fn add_key (array_in: &mut [u8; 16], key: &mut [u8; 16]) {
+    for element_number in 0..16 {
+        array_in[element_number] = array_in[element_number] ^ key[element_number];
+    }
+}
+
+fn key_expand_core (array_in: &mut [u8; 4], iteration: usize) {
+    let mut tmp: u8 = array_in[0];
+    array_in[0] = array_in[1];
+    array_in[1] = array_in[2];
+    array_in[2] = array_in[3];
+    array_in[3] = tmp;
+
+    substitute(array_in);
+
+    array_in[0] = array_in[0] ^ RCON[i];
+}
+
+    
 
 
 fn main() {
