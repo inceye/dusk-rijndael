@@ -313,7 +313,7 @@ fn key_expand_core (array_in: &mut [u8; 4], iteration: usize) {
 
     substitute(array_in);
 
-    array_in[0] = array_in[0] ^ RCON[i];
+    array_in[0] = array_in[0] ^ RCON[iteration];
 }
 
     
