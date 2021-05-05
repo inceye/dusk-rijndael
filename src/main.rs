@@ -1,4 +1,36 @@
 
+#![deny(warnings)]
+
+#![allow(unused_parens)]
+
+#![warn(unreachable_pub)]
+#![warn(unused_crate_dependencies)]
+#![warn(unused_extern_crates)] 
+#![warn(missing_copy_implementations)] 
+#![warn(missing_debug_implementations)] 
+#![warn(variant_size_differences)] 
+#![warn(keyword_idents)]
+#![warn(anonymous_parameters)]
+
+#![warn(missing_abi)]
+
+#![warn(meta_variable_misuse)]
+#![warn(semicolon_in_expressions_from_macros)]
+#![warn(absolute_paths_not_starting_with_crate)]
+
+#![warn(missing_crate_level_docs)]
+#![warn(missing_docs)]
+#![warn(missing_doc_code_examples)]
+
+#![warn(elided_lifetimes_in_paths)]
+#![warn(explicit_outlives_requirements)]
+#![warn(invalid_html_tags)]
+#![warn(non_ascii_idents)]
+#![warn(pointer_structural_match)]
+#![warn(private_doc_tests)]
+#![warn(single_use_lifetimes)]
+#![warn(unaligned_references)]
+
 ///////////////////////////////////////////////////////////////////////////////
 //                              Substitution box                             //
 ///////////////////////////////////////////////////////////////////////////////
@@ -162,7 +194,7 @@ const GM14: [u8; 256] = [
     215, 217, 203, 197, 239, 225, 243, 253, 167, 169, 187, 181, 159, 145, 131, 141];
 
 ///////////////////////////////////////////////////////////////////////////////
-//                       Galois powers of 2 of each byte                     //
+//                      Galois powers of 2 for each byte                     //
 ///////////////////////////////////////////////////////////////////////////////
 
 const RCON: [u8; 256] = [
@@ -187,13 +219,19 @@ const RCON: [u8; 256] = [
 //                    Substitution and reverse substitution                  //
 ///////////////////////////////////////////////////////////////////////////////
 
-fn substitute (array_in: &mut [u8]) {
+fn substitute (
+    array_in: &mut [u8],
+) {
+
     for element_number in 0..array_in.len() {
         array_in[element_number] = SBOX[array_in[element_number] as usize];
     }
 }
 
-fn inverse_substitute (array_in: &mut [u8]) {
+fn inverse_substitute (
+    array_in: &mut [u8],
+) {
+
     for element_number in 0..array_in.len() {
         array_in[element_number] = BSBOX[array_in[element_number] as usize];
     }
@@ -203,7 +241,11 @@ fn inverse_substitute (array_in: &mut [u8]) {
 //                      Columns mixing and reverse mixing                    //
 ///////////////////////////////////////////////////////////////////////////////
 
-fn mix_column (array_in: &mut [u8; 4], column: usize) {
+fn mix_columns (
+    array_in: &mut [u8; 4], 
+    column: usize,
+) {
+
     let mut tmp: [u8; 4] = [0, 0, 0, 0];
     tmp[0] = GM2[array_in[column] as usize] ^ GM3[array_in[column + 4] as usize] ^
         array_in[column + 8] ^ array_in[column + 12];
@@ -223,7 +265,11 @@ fn mix_column (array_in: &mut [u8; 4], column: usize) {
     array_in[column + 12] = tmp[3];
 }
 
-fn inverse_mix_column (array_in: &mut [u8; 4], column: usize) {
+fn inverse_mix_columns (
+    array_in: &mut [u8; 4], 
+    column: usize,
+) {
+
     let mut tmp: [u8; 4] = [0, 0, 0, 0];
 
     tmp[0] = GM14[array_in[column] as usize] ^ GM11[array_in[column + 4] as usize]
@@ -248,8 +294,11 @@ fn inverse_mix_column (array_in: &mut [u8; 4], column: usize) {
 //                     Rows shifting and reverse shifting                    //
 ///////////////////////////////////////////////////////////////////////////////
 
-fn shift_rows (array_in: &mut [u8; 16]) {
-    let mut tmp: u8 = 0;
+fn shift_rows (
+    array_in: &mut [u8; 16],
+) {
+
+    let mut tmp: u8;
 
     tmp = array_in[4];
     array_in[4] = array_in[5];
@@ -271,8 +320,11 @@ fn shift_rows (array_in: &mut [u8; 16]) {
     array_in[13] = tmp;
 }
 
-fn inverse_shift_rows (array_in: &mut [u8; 16]) {
-    let mut tmp: u8 = 0;
+fn inverse_shift_rows (
+    array_in: &mut [u8; 16],
+) {
+
+    let mut tmp: u8;
 
     tmp = array_in[4];
     array_in[4] = array_in[7];
@@ -295,17 +347,29 @@ fn inverse_shift_rows (array_in: &mut [u8; 16]) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//                                Key generation                             //
+//                                Add actual key                             //
 ///////////////////////////////////////////////////////////////////////////////
 
-fn add_key (array_in: &mut [u8; 16], key: &mut [u8; 16]) {
+fn add_key (
+    array_in: &mut [u8; 16], 
+    key: &mut [u8; 16],
+) {
+
     for element_number in 0..16 {
         array_in[element_number] = array_in[element_number] ^ key[element_number];
     }
 }
 
-fn key_expand_core (array_in: &mut [u8; 4], iteration: usize) {
-    let mut tmp: u8 = array_in[0];
+///////////////////////////////////////////////////////////////////////////////
+//                                Key generation                             //
+///////////////////////////////////////////////////////////////////////////////
+
+fn key_expansion_core (
+    array_in: &mut [u8; 4], 
+    iteration: usize,
+) {
+
+    let tmp: u8 = array_in[0];
     array_in[0] = array_in[1];
     array_in[1] = array_in[2];
     array_in[2] = array_in[3];
@@ -316,8 +380,42 @@ fn key_expand_core (array_in: &mut [u8; 4], iteration: usize) {
     array_in[0] = array_in[0] ^ RCON[iteration];
 }
 
-    
+fn key_expansion (
+    key: &[u8], 
+    new_len: usize,
+) -> Vec<u8> {
 
+    let mut result: Vec<u8> = Vec::new();
+    for byte in key {
+        result.push(*byte);
+    }
+    let key_len: usize = key.len();
+    let mut len_now: usize = key_len;
+
+    let mut rcon_iteration: usize = 1;
+    
+    let mut tail: [u8; 4] = [0, 0, 0, 0];
+
+    while len_now < new_len {
+        for byte_n in 0..4 {
+            tail[byte_n] = result[len_now - 4 + byte_n];
+        }
+        if len_now % key_len == 0 {
+            key_expansion_core(&mut tail, rcon_iteration);
+            rcon_iteration += 1;
+        } else if ((key_len >= 32) &&
+            (len_now % key_len % 16 == 0) && 
+            (key_len - (len_now % key_len) >= 16)) {
+
+            substitute(&mut tail);
+        }
+        for byte in &tail {
+            result.push(result[len_now - key_len] ^ byte);
+            len_now += 1;
+        }
+    }
+    return result;
+}
 
 fn main() {
 }
