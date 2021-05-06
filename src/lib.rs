@@ -1,5 +1,5 @@
 
-#![deny(warnings)]
+//#![deny(warnings)]
 
 #![allow(unused_parens)]
 
@@ -219,6 +219,18 @@ const RCON: [u8; 256] = [
 //                    Substitution and reverse substitution                  //
 ///////////////////////////////////////////////////////////////////////////////
 
+#[test]
+fn test_substitute () {
+    let mut a: [u8; 256] = [0; 256];
+    for i in 0..256 {
+        a[i] = i as u8;
+    }
+    let b = a.clone();
+    substitute(&mut a);
+    inverse_substitute(&mut a);
+    assert_eq!(a, b);
+}
+
 fn substitute (
     array_in: &mut [u8],
 ) {
@@ -241,58 +253,78 @@ fn inverse_substitute (
 //                      Columns mixing and reverse mixing                    //
 ///////////////////////////////////////////////////////////////////////////////
 
+#[test]
+fn test_mix_columns () {
+    let mut a: [u8; 16] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+    mix_columns(&mut a);
+    inverse_mix_columns(&mut a);
+    assert_eq!(a, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+}
+
 fn mix_columns (
-    array_in: &mut [u8; 4], 
-    column: usize,
+    array_in: &mut [u8; 16], 
 ) {
 
     let mut tmp: [u8; 4] = [0, 0, 0, 0];
-    tmp[0] = GM2[array_in[column] as usize] ^ GM3[array_in[column + 4] as usize] ^
-        array_in[column + 8] ^ array_in[column + 12];
 
-    tmp[1] = array_in[column] ^ GM2[array_in[column + 4] as usize] ^
-        GM3[array_in[column + 8] as usize] ^ array_in[column + 12];
+    for column in 0..4 {
+        tmp[0] = GM2[array_in[column] as usize] ^ GM3[array_in[column + 4] as usize] ^
+            array_in[column + 8] ^ array_in[column + 12];
 
-    tmp[2] = array_in[column] ^ array_in[column + 4] ^
-        GM2[array_in[column + 8] as usize] ^ GM3[array_in[column + 12] as usize];
+        tmp[1] = array_in[column] ^ GM2[array_in[column + 4] as usize] ^
+            GM3[array_in[column + 8] as usize] ^ array_in[column + 12];
 
-    tmp[3] = GM3[array_in[column] as usize] ^ array_in[column + 4] ^
-        array_in[column + 8] ^ GM2[array_in[column + 12] as usize];
+        tmp[2] = array_in[column] ^ array_in[column + 4] ^
+            GM2[array_in[column + 8] as usize] ^ GM3[array_in[column + 12] as usize];
 
-    array_in[column] = tmp[0];
-    array_in[column + 4] = tmp[1];
-    array_in[column + 8] = tmp[2];
-    array_in[column + 12] = tmp[3];
+        tmp[3] = GM3[array_in[column] as usize] ^ array_in[column + 4] ^
+            array_in[column + 8] ^ GM2[array_in[column + 12] as usize];
+
+        array_in[column] = tmp[0];
+        array_in[column + 4] = tmp[1];
+        array_in[column + 8] = tmp[2];
+        array_in[column + 12] = tmp[3];
+    }
 }
 
 fn inverse_mix_columns (
-    array_in: &mut [u8; 4], 
-    column: usize,
+    array_in: &mut [u8; 16], 
 ) {
 
     let mut tmp: [u8; 4] = [0, 0, 0, 0];
 
-    tmp[0] = GM14[array_in[column] as usize] ^ GM11[array_in[column + 4] as usize]
-        ^ GM13[array_in[column + 8] as usize] ^ GM9[array_in[column + 12] as usize];
+    for column in 0..4 {
+        tmp[0] = GM14[array_in[column] as usize] ^ GM11[array_in[column + 4] as usize]
+            ^ GM13[array_in[column + 8] as usize] ^ GM9[array_in[column + 12] as usize];
 
-    tmp[1] = GM9[array_in[column] as usize] ^ GM14[array_in[column + 4] as usize]
-        ^ GM11[array_in[column + 8] as usize] ^ GM13[array_in[column + 12] as usize];
+        tmp[1] = GM9[array_in[column] as usize] ^ GM14[array_in[column + 4] as usize]
+            ^ GM11[array_in[column + 8] as usize] ^ GM13[array_in[column + 12] as usize];
 
-    tmp[2] = GM13[array_in[column] as usize] ^ GM9[array_in[column + 4] as usize]
-        ^ GM14[array_in[column + 8] as usize] ^ GM11[array_in[column + 12] as usize];
+        tmp[2] = GM13[array_in[column] as usize] ^ GM9[array_in[column + 4] as usize]
+            ^ GM14[array_in[column + 8] as usize] ^ GM11[array_in[column + 12] as usize];
 
-    tmp[3] = GM11[array_in[column] as usize] ^ GM13[array_in[column + 4] as usize]
-        ^ GM9[array_in[column + 8] as usize] ^ GM14[array_in[column + 12] as usize];
+        tmp[3] = GM11[array_in[column] as usize] ^ GM13[array_in[column + 4] as usize]
+            ^ GM9[array_in[column + 8] as usize] ^ GM14[array_in[column + 12] as usize];
 
-    array_in[column] = tmp[0];
-    array_in[column + 4] = tmp[1];
-    array_in[column + 8] = tmp[2];
-    array_in[column + 12] = tmp[3];
+        array_in[column] = tmp[0];
+        array_in[column + 4] = tmp[1];
+        array_in[column + 8] = tmp[2];
+        array_in[column + 12] = tmp[3];
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //                     Rows shifting and reverse shifting                    //
 ///////////////////////////////////////////////////////////////////////////////
+
+#[test]
+fn test_shift_rows () {
+    let mut a: [u8; 16] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+    shift_rows(&mut a);
+    assert_eq!(a, [0, 1, 2, 3, 5, 6, 7, 4, 10, 11, 8, 9, 15, 12, 13, 14]);
+    inverse_shift_rows(&mut a);
+    assert_eq!(a, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+}
 
 fn shift_rows (
     array_in: &mut [u8; 16],
@@ -352,7 +384,7 @@ fn inverse_shift_rows (
 
 fn add_key (
     array_in: &mut [u8; 16], 
-    key: &mut [u8; 16],
+    key: [u8; 16],
 ) {
 
     for element_number in 0..16 {
@@ -380,7 +412,7 @@ fn key_expansion_core (
     array_in[0] = array_in[0] ^ RCON[iteration];
 }
 
-fn key_expansion (
+pub fn key_expansion (
     key: &[u8], 
     new_len: usize,
 ) -> Vec<u8> {
@@ -417,5 +449,108 @@ fn key_expansion (
     return result;
 }
 
-fn main() {
+///////////////////////////////////////////////////////////////////////////////
+//                                  Encryption                               //
+///////////////////////////////////////////////////////////////////////////////
+
+#[test]
+fn test_row_column_convert () {
+    let mut a: [u8; 16] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+    row_column_convert(&mut a);
+    assert_eq!(a, [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15]);
+    row_column_convert(&mut a);
+    assert_eq!(a, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+}
+
+fn row_column_convert (
+    block: &mut [u8; 16]
+) {
+
+    let mut tmp: u8 = block[1];
+    block[1] = block[4];
+    block[4] = tmp;
+
+    tmp = block[2];
+    block[2] = block[8];
+    block[8] = tmp;
+
+    tmp = block[3];
+    block[3] = block[12];
+    block[12] = tmp;
+
+    tmp = block[6];
+    block[6] = block[9];
+    block[9] = tmp;
+
+    tmp = block[7];
+    block[7] = block[13];
+    block[13] = tmp;
+
+    tmp = block[11];
+    block[11] = block[14];
+    block[14] = tmp;
+}
+
+pub fn encrypt (
+    block: &mut [u8; 16],
+    key: &Vec<u8>,
+) {
+
+    row_column_convert(block);
+
+    let round_key: [u8; 16] = [0; 16];
+    let mut key_clone: Vec<u8> = key.clone();
+
+    key_clone[0..16].clone_from_slice(&round_key);
+    add_key(block, round_key);
+
+    for iteration in 1..((key.len() / 16) - 1) {
+        key_clone[(iteration * 16)..((iteration + 1) * 16)].
+            clone_from_slice(&round_key);
+        substitute(block);
+        shift_rows(block);
+        mix_columns(block);
+        add_key(block, round_key);
+    }
+    
+    let iteration: usize = key.len() / 16 - 1;
+    key_clone[(iteration * 16)..((iteration + 1) * 16)].
+        clone_from_slice(&round_key);
+    substitute(block);
+    shift_rows(block);
+    add_key(block, round_key);
+
+    row_column_convert(block);
+}
+
+pub fn decrypt (
+    block: &mut [u8; 16],
+    key: &Vec<u8>,
+) {
+
+    row_column_convert(block);
+
+    let round_key: [u8; 16] = [0; 16];
+    let mut key_clone: Vec<u8> = key.clone();
+
+    let iteration: usize = key.len() / 16 - 1;
+    key_clone[(iteration * 16)..((iteration + 1) * 16)].
+        clone_from_slice(&round_key);
+    add_key(block, round_key);
+    inverse_shift_rows(block);
+    inverse_substitute(block);
+
+    for iteration in (1..((key.len() / 16) - 1)).rev() {
+        key_clone[(iteration * 16)..((iteration + 1) * 16)].
+            clone_from_slice(&round_key);
+        add_key(block, round_key);
+        inverse_mix_columns(block);
+        inverse_shift_rows(block);
+        inverse_substitute(block);
+    }
+
+    key_clone[0..16].clone_from_slice(&round_key);
+    add_key(block, round_key);
+
+    row_column_convert(block);
 }
