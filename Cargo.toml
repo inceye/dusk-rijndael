@@ -1,6 +1,10 @@
 [package]
-name = "rijndael"
-version = "0.1.0"
+name = "dusk-rijndael"
+description = "Dusk plugin, that implements Rijndael Cipher (aka AES)."
+readme = "README.md"
+license-file = "LICENSE"
+license = "GPL-3.0-or-later"
+version = "0.0.0"
 authors = ["Andy Gozas <andy@gozas.me>"]
 edition = "2018"
 
@@ -10,3 +14,4 @@ edition = "2018"
 crate-type = ["dylib"]
 
 [dependencies]
+dusk-api = "0.0.11"
